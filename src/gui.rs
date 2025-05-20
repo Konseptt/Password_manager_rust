@@ -12,6 +12,7 @@ pub struct PasswordManagerApp {
     message: String,
     password_length: String,
     initialized: bool,
+    csv_path_input: String,
 }
 
 impl Default for PasswordManagerApp {
@@ -19,6 +20,7 @@ impl Default for PasswordManagerApp {
         Self {
             pm: Arc::new(Mutex::new(Some(PasswordManager::new("passwords.enc")))),
             master_password: String::new(),
+            csv_path_input: String::new(),
             website: String::new(),
             username: String::new(),
             password: String::new(),
@@ -214,7 +216,7 @@ impl PasswordManagerApp {
             if self.message.starts_with("Please enter") {
                 ui.horizontal(|ui| {
                     ui.label(RichText::new("CSV Path:").size(16.0));
-                    ui.text_edit_singleline(&mut self.master_password);
+                    ui.text_edit_singleline(&mut self.csv_path_input);
                 });
                 
                 if ui.button(RichText::new("Load").size(16.0)).clicked() {
@@ -263,18 +265,16 @@ impl PasswordManagerApp {
 
     fn start_import(&mut self) {
         self.message = "Please enter the path to Chrome Passwords.csv".to_string();
-        self.master_password.clear();
+        self.csv_path_input.clear();
     }
 
     fn import_from_csv(&mut self) {
-        let path = std::path::PathBuf::from(&self.master_password);
+        let path = std::path::PathBuf::from(&self.csv_path_input);
         if path.exists() {
             if let Some(pm) = self.pm.lock().unwrap().as_mut() {
-                match pm.import_from_csv(&self.master_password) {
+                match pm.import_from_csv(&self.csv_path_input) {
                     Ok(_) => {
                         self.message = "Passwords imported successfully. Use website URL to retrieve passwords.".to_string();
-                        // Clear the master_password field after successful import
-                        self.master_password.clear();
                     }
                     Err(e) => self.message = format!("Error importing CSV: {}", e),
                 }
@@ -282,5 +282,6 @@ impl PasswordManagerApp {
         } else {
             self.message = "CSV file does not exist".to_string();
         }
+        self.csv_path_input.clear();
     }
 }
